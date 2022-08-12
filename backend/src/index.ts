@@ -5,8 +5,9 @@ import { generateKeyPair, GenerateKeyPairResult, JWTPayload, jwtVerify, SignJWT 
 
 /** Server runtime port */
 const PORT = 8080;
-
+/** Hostname that the server runs on - used by FIDO2 */
 const HOSTNAME = "fido.mxblue.net.au"
+/** Origin URL (with protocol and port) that responses should originate from */
 const ORIGIN = "https://fido.mxblue.net.au"
 
 type AsyncExpressHandlerFunction = (req: Request, res: Response, next: NextFunction) => Promise<void>;
@@ -42,6 +43,7 @@ type RegistrationJWT = JWTPayload & {
   challenge: string; 
 };
 
+/** Data to represent a FIDO2 credential */
 interface Credential {
   counter: number;
   credentialId: string;
@@ -78,7 +80,6 @@ generateKeyPair('ES256').then(kp => {
 });
 
 const users = new Map<string, UserData>();
-const userIdLookup = new Map<string, UserData>();
 
 /** Simple echoing route handler */
 app.get('/echo', (_, res): void => {
@@ -143,7 +144,7 @@ app.post('/register/finish', runAsync(async (req, res): Promise<void> => {
   try {
     body = JSON.parse(req.body);
     assert(typeof body.token === 'string');
-    assert(body.token !== null || body.token !== undefined);
+    assert(body.result !== null || body.result !== undefined);
   } catch (e) {
     console.error(e);
     res.status(400).json({ 'error': 'Invalid request' });
