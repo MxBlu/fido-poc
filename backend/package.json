@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "description": "Backend for POC of passwordless authentication",
   "main": "build/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node build/index.js",
+    "dev": "nodemon --watch \"src/**\" --ext ts,json --exec node --experimental-specifier-resolution=node --loader ts-node/esm src/index.ts",
+    "build": "tsc --build",
+    "lint": "eslint . --ext .ts"
+  },
   "repository": "https://github.com/MxBlu/fido-poc",
   "author": "MxBlu",
   "license": "MIT",
@@ -10,6 +17,13 @@
     "express": "^4.18.1"
   },
   "devDependencies": {
-    "@types/express": "^4.17.13"
+    "@types/express": "^4.17.13",
+    "@types/node": "^18.7.2",
+    "@typescript-eslint/eslint-plugin": "^5.33.0",
+    "@typescript-eslint/parser": "^5.33.0",
+    "eslint": "^8.21.0",
+    "nodemon": "^2.0.19",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.7.4"
   }
 }
