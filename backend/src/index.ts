@@ -38,15 +38,19 @@ interface RegistrationFinishBody {
 }
 
 /** JWT interface data passed around during registration */
-type RegistrationJWT = JWTPayload & { 
-  userName: string;
+type ChallengeJWT = JWTPayload & { 
+  userName?: string;
   challenge: string; 
 };
+
+interface LoginStartBody {
+  email?: string;
+}
 
 /** Data to represent a FIDO2 credential */
 interface Credential {
   counter: number;
-  credentialId: string;
+  credentialId: ArrayBuffer;
   publicKey: ArrayBuffer;
 }
 
@@ -86,7 +90,10 @@ app.get('/echo', (_, res): void => {
   res.send('echo');
 });
 
-/** Registration start route, provided a RegistrationStartBody */
+/** 
+ * Registration start route, provided a RegistrationStartBody 
+ * Returns a 200 with registration details on success, 400 on bad request
+*/
 app.post('/register/start', runAsync(async (req, res): Promise<void> => {
   // Parse and validate request body
   let body: RegistrationStartBody = null;
@@ -138,6 +145,10 @@ app.post('/register/start', runAsync(async (req, res): Promise<void> => {
   return;
 }));
 
+/** 
+ * Registration finish route, provided a RegistrationFinishBody 
+ * Returns 200 on success, 403 on attestation failure, 400 on bad request
+*/
 app.post('/register/finish', runAsync(async (req, res): Promise<void> => {
   // Parse and validate request body
   let body: RegistrationFinishBody = null;
@@ -153,7 +164,7 @@ app.post('/register/finish', runAsync(async (req, res): Promise<void> => {
 
   // Verify and decode the JWT
   const jwtDecode = await jwtVerify(body.token, serverKp.publicKey);
-  const jwt = <RegistrationJWT> jwtDecode.payload;
+  const jwt = <ChallengeJWT> jwtDecode.payload;
 
   try {
     // Validate the attestation against the challenge
@@ -181,6 +192,65 @@ app.post('/register/finish', runAsync(async (req, res): Promise<void> => {
     res.status(403).json({ 'error': 'Attestation failed' });
     return;
   }
+}));
+
+/** 
+ * Login start route, provided a LoginStartBody 
+ * Returns 200 with a login challenge on sucess, 403 on invalid username, 400 on bad request 
+*/
+app.post('/login', runAsync(async (req, res): Promise<void> => {
+  // Default the body to an empty object
+  const rawBody = req.body != null ? req.body : "{}";
+  // Parse and validate request body
+  let body: LoginStartBody = null;
+  try {
+    body = JSON.parse(rawBody);
+    assert(body.email == null || typeof body.email === 'string');
+  } catch (e) {
+    console.error(e);
+    res.status(400).json({ 'error': 'Invalid request' });
+    return;
+  }
+
+  // Generate assertion
+  const opts = await fido2.assertionOptions();
+
+  // `sub` and `userName` will only get set if we have a valid email
+  let sub = null;
+  let userName = null;
+
+  // Add in allowed credentials we we're treating it as a email based login
+  if (body.email != null) {
+    // Handle as non-resident key login
+    const user = users.get(body.email);
+    // Throw a 403 if we receive an invalid email
+    if (user == null) {
+      res.status(403).json({ 'error': 'Invalid username' });
+      return;
+    }
+
+    // Add in credentials from request user
+    opts.allowCredentials = user.credentials.map(c => ({ id: c.credentialId, type: 'public-key' }));
+
+    sub = user.userHandle;
+    userName = user.userName;
+  }
+
+  // Sign a JWT and store the user ID and challenge on it for later retrieval
+  const jwt = await new SignJWT({
+    sub: sub,
+    userName: userName,
+    challenge: opts.challenge
+  })
+  .setExpirationTime('5m')
+  .sign(serverKp.privateKey);
+
+  // Send the login options and signed JWT to the user
+  res.json({
+    'token': jwt,
+    'options': opts
+  });
+  return;
 }));
 
 app.listen(PORT, () => { console.log(`Listening on port ${PORT}`) });
