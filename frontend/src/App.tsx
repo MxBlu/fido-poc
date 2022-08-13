@@ -61,7 +61,8 @@ function App() {
 
       const startResp = await client.post('/register/start', initialRegistrationData);
       const startRespData = startResp.data as RegistrationStartResponse;
-
+      
+      appendResult({'status': 'gotchallenge', 'data': startRespData.options.challenge });
       const jwt = startRespData.token;
       const opts: CredentialCreationOptions = {
         publicKey: {
@@ -73,7 +74,6 @@ function App() {
           }
         }
       };
-      appendResult({'status': 'gotchallenge', 'data': opts });
 
       const credential = await navigator.credentials.create(opts) as PublicKeyCredential;
       const transferrableCredentials: AttestationResultWireFormat = {
@@ -86,7 +86,7 @@ function App() {
         type: credential.type
       };
 
-      appendResult({'status': 'sendingcredentials', 'credentials': transferrableCredentials });
+      appendResult({'status': 'sendingcredential', 'credential': credential.id });
       const registrationFinishData: RegistrationFinishRequest = {
         result: transferrableCredentials,
         token: jwt
