@@ -6,9 +6,15 @@ import { Logger } from "../utils/logger.js";
 /** Module logger */
 const logger = new Logger("PurgeUser");
 
-/** Request body for /register/start */
-interface PurgeUserBody {
+/** Request body for /user/delete */
+interface PurgeUserRequest {
   userName: string;
+}
+
+/** Response body for /user/delete */
+interface PurgeUserResponse {
+  error?: string;
+  status?: string;
 }
 
 /** 
@@ -18,15 +24,13 @@ interface PurgeUserBody {
 */
 export function purgeUserHandle(req: Request, res: Response): void {
   // Parse and validate request body
-  let body: PurgeUserBody = null;
+  const body: PurgeUserRequest = req.body ?? {};
   try {
-    body = JSON.parse(req.body);
-    assert(typeof body.userName === 'string');
+    assert(typeof body.userName === 'string', "Username is not present or is not a string");
   } catch (e) {
     const error = <Error> e;
-    logger.error(error.message);
-    console.error(error.stack);
-    res.status(400).json({ 'error': 'Invalid request' });
+    logger.warn(error.message);
+    res.status(400).json(<PurgeUserResponse> { 'error': error.message });
     return;
   }
   
@@ -34,6 +38,6 @@ export function purgeUserHandle(req: Request, res: Response): void {
   logger.info(`Purged user: ${body.userName}`);
 
   // Return success
-  res.json({ 'status': 'ok' });
+  res.json(<PurgeUserResponse> { 'status': 'ok' });
   return;
 }

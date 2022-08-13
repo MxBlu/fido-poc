@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { AssertionResult } from "fido2-lib";
 import { jwtVerify } from "jose";
 import { ORIGIN } from "../constants.js";
-import { ChallengeJWT, Credential, UserData } from "../models.js";
+import { ChallengeJWT, FIDO2Credential, UserData } from "../models.js";
 import { Fido2, ServerKP, Users } from "../runtime_globals.js";
 import { ab2str } from "../utils/ab2str.js";
 import { Logger } from "../utils/logger.js";
@@ -12,9 +12,19 @@ import { Logger } from "../utils/logger.js";
 const logger = new Logger("LoginFinish");
 
 /** Request body for /login/finish */
-interface LoginFinishBody {
+interface LoginFinishRequest {
   token: string;
-  result: AssertionResult;
+  result: AssertionResult; // TODO: Maybe switch to PublicKeyCredential
+}
+
+/** Response body for /login/finish */
+interface LoginFinishResponse {
+  error?: string;
+  status?: string;
+  user?: {
+    userName: string;
+    displayName: string;
+  }
 }
 
 /** 
@@ -23,16 +33,14 @@ interface LoginFinishBody {
 */
 export async function loginFinishHandle(req: Request, res: Response): Promise<void> {
   // Parse and validate request body
-  let body: LoginFinishBody = null;
+  const body: LoginFinishRequest = req.body ?? {};
   try {
-    body = JSON.parse(req.body);
-    assert(typeof body.token === 'string');
-    assert(body.result !== null || body.result !== undefined);
+    assert(typeof body.token === 'string', 'Token is not present or is not a string');
+    assert(body.result !== null || body.result !== undefined, 'Result is not present');
   } catch (e) {
     const error = <Error> e;
-    logger.error(error.message);
-    console.error(error.stack);
-    res.status(400).json({ 'error': 'Invalid request' });
+    logger.warn(error.message);
+    res.status(400).json(<LoginFinishResponse> { 'error': error.message });
     return;
   }
 
@@ -43,7 +51,7 @@ export async function loginFinishHandle(req: Request, res: Response): Promise<vo
   try {
     // Find the credentials that the challenge was signed by
     let user: UserData = null;
-    let cred: Credential = null;
+    let cred: FIDO2Credential = null;
     if (jwt.userName != null) {
       logger.info(`Login attempt against username: ${jwt.userName}`);
 
@@ -68,7 +76,7 @@ export async function loginFinishHandle(req: Request, res: Response): Promise<vo
     // If we couldn't find a matching set of credentials, throw a 403
     if (cred == null) {
       logger.warn(`Matching credentials not found: ${ab2str(body.result.rawId)}`);
-      res.status(403).json({ 'error': 'Unknown credentials' });
+      res.status(403).json(<LoginFinishResponse> { 'error': 'Unknown credentials' });
       return;
     }
 
@@ -88,7 +96,7 @@ export async function loginFinishHandle(req: Request, res: Response): Promise<vo
     logger.warn(`Login successful for username: ${user.userName}`);
 
     // Return success, along with the user object
-    res.json({ 
+    res.json(<LoginFinishResponse> { 
       'status': 'ok', 
       'user': {
         'userName': user.userName,

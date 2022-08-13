@@ -4,12 +4,12 @@ import { JWTPayload } from "jose";
 export interface UserData {
   userName: string;
   displayName: string;
-  credentials?: Credential[];
+  credentials?: FIDO2Credential[];
   userHandle?: string;
 }
 
 /** Data to represent a FIDO2 credential */
-export interface Credential {
+export interface FIDO2Credential {
   counter: number;
   credentialId: ArrayBuffer;
   publicKey: string;

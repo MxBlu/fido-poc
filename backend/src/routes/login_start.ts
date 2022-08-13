@@ -8,8 +8,15 @@ import { Logger } from "../utils/logger.js";
 const logger = new Logger("LoginStart");
 
 /** Request body for /login/start */
-interface LoginStartBody {
+interface LoginStartRequest {
   userName?: string;
+}
+
+/** Response body for /login/start */
+interface LoginStartResponse {
+  error?: string;
+  token?: string;
+  options?: PublicKeyCredentialRequestOptions;
 }
 
 /** 
@@ -17,18 +24,14 @@ interface LoginStartBody {
  * Returns 200 with a login challenge on sucess, 403 on invalid username, 400 on bad request 
 */
 export async function loginStartHandle(req: Request, res: Response): Promise<void> {
-  // Default the body to an empty object
-  const rawBody = req.body != null ? req.body : "{}";
   // Parse and validate request body
-  let body: LoginStartBody = null;
+  const body: LoginStartRequest = req.body ?? {};
   try {
-    body = JSON.parse(rawBody);
-    assert(body.userName == null || typeof body.userName === 'string');
+    assert(body.userName == null || typeof body.userName === 'string', "Username is not a string");
   } catch (e) {
     const error = <Error> e;
-    logger.error(error.message);
-    console.error(error.stack);
-    res.status(400).json({ 'error': 'Invalid request' });
+    logger.warn(error.message);
+    res.status(400).json({ 'error': error.message });
     return;
   }
 
@@ -47,7 +50,7 @@ export async function loginStartHandle(req: Request, res: Response): Promise<voi
     // Throw a 403 if we receive an invalid username
     if (user == null) {
       logger.warn(`Unknown username: ${body.userName}`);
-      res.status(403).json({ 'error': 'Invalid username' });
+      res.status(403).json(<LoginStartResponse> { 'error': 'Invalid username' });
       return;
     }
 
@@ -67,10 +70,11 @@ export async function loginStartHandle(req: Request, res: Response): Promise<voi
     challenge: opts.challenge
   })
   .setExpirationTime('5m')
+  .setProtectedHeader({ alg: 'ES256' })
   .sign(ServerKP.privateKey);
 
   // Send the login options and signed JWT to the user
-  res.json({
+  res.json(<LoginStartResponse> {
     'token': jwt,
     'options': opts
   });

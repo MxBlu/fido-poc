@@ -1,4 +1,5 @@
 import assert from "assert";
+import * as crypto from "crypto";
 import { Request, Response } from "express";
 import { SignJWT } from "jose";
 import { Fido2, ServerKP, Users } from "../runtime_globals.js";
@@ -8,9 +9,16 @@ import { Logger } from "../utils/logger.js";
 const logger = new Logger("RegistrationStart");
 
 /** Request body for /register/start */
-interface RegistrationStartBody {
+interface RegistrationStartRequest {
   displayName: string;
   userName: string;
+}
+
+/** Response body for /register/start */
+interface RegistrationStartResponse {
+  error?: string;
+  token?: string;
+  options?: CredentialCreationOptions;
 }
 
 /** 
@@ -20,23 +28,21 @@ interface RegistrationStartBody {
 */
 export async function registerStartHandle(req: Request, res: Response): Promise<void> {
   // Parse and validate request body
-  let body: RegistrationStartBody = null;
+  const body: RegistrationStartRequest = req.body ?? {};
   try {
-    body = JSON.parse(req.body);
-    assert(typeof body.displayName === 'string');
-    assert(typeof body.userName === 'string' && body.userName.length > 0);
+    assert(typeof body.displayName === 'string', 'Display name is not present or not a string');
+    assert(typeof body.userName === 'string' && body.userName.length > 0, 'Username is not present or not a string');
   } catch (e) {
     const error = <Error> e;
-    logger.error(error.message);
-    console.error(error.stack);
-    res.status(400).json({ 'error': 'Invalid request' });
+    logger.warn(error.message);
+    res.status(400).json(<RegistrationStartResponse> { 'error': error.message });
     return;
   }
 
   // Check username availability
   if (Users.has(body.userName)) {
     logger.warn(`Username in use: ${body.userName}`);
-    res.status(400).json({ 'error': 'Username in use' });
+    res.status(400).json(<RegistrationStartResponse> { 'error': 'Username in use' });
     return;
   }
   
@@ -64,10 +70,11 @@ export async function registerStartHandle(req: Request, res: Response): Promise<
     challenge: opts.challenge
    })
    .setExpirationTime('5m')
+   .setProtectedHeader({ alg: 'ES256' })
    .sign(ServerKP.privateKey);
 
   // Send the registration options and signed JWT to the user
-  res.json({
+  res.json(<RegistrationStartResponse> {
     'token': jwt,
     'options': opts
   });

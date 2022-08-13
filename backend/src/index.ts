@@ -80,6 +80,8 @@ app.use(cors({
   origin: true, // TODO: Make origin strict in production
   // credentials: true
 }));
+// JSON body parser
+app.use(Express.json());
 // Request logger
 app.use(logRequest);
 
