@@ -5,7 +5,7 @@ import { jwtVerify } from "jose";
 import { ORIGIN } from "../constants.js";
 import { AttestationResultWireFormat, ChallengeJWT, FIDO2Credential } from "../models.js";
 import { Fido2, ServerKP, Users } from "../runtime_globals.js";
-import { b64_decode, b64_encode, b64_to_b64url } from "../utils/b64.js";
+import { b64url_to_b64, b64_decode, b64_encode, b64_to_b64url } from "../utils/b64.js";
 import { Logger } from "../utils/logger.js";
 
 /** Module logger */
@@ -48,7 +48,7 @@ export async function registerFinishHandle(req: Request, res: Response): Promise
 
   // Decode base 64 data back to Array Buffers
   const result: AttestationResult = {
-    id: b64_decode(body.result.id),
+    id: b64_decode(b64url_to_b64(body.result.id)),
     rawId: b64_decode(body.result.rawId),
     response: {
       attestationObject: b64_to_b64url(body.result.response.attestationObject),
