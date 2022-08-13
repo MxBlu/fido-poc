@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import React, { useState } from 'react';
+import * as base64buffer from 'base64-arraybuffer';
 import './App.css';
 import { AttestationResultWireFormat, LoginStartRequest, LoginStartResponse, RegistrationFinishRequest, RegistrationFinishResponse, RegistrationStartRequest, RegistrationStartResponse } from './request_interfaces.js';
 
@@ -65,25 +66,24 @@ function App() {
       const opts: CredentialCreationOptions = {
         publicKey: {
           ...startRespData.options,
-          challenge: Uint8Array.from(atob(startRespData.options.challenge), c => c.charCodeAt(0)),
+          challenge: base64buffer.decode(startRespData.options.challenge),
           user: {
             ...startRespData.options.user,
-            id: Uint8Array.from(atob(startRespData.options.user.id), c => c.charCodeAt(0)),
+            id: base64buffer.decode(startRespData.options.user.id),
           }
         }
       };
       appendResult({'status': 'gotchallenge', 'data': opts });
 
       const credential = await navigator.credentials.create(opts) as PublicKeyCredential;
-
       const transferrableCredentials: AttestationResultWireFormat = {
         id: credential.id,
-        rawId: btoa(String.fromCharCode(...Array.from(new Uint8Array(credential.rawId)))),
+        rawId: base64buffer.encode(credential.rawId),
         response: {
-          clientDataJSON: btoa(String.fromCharCode(...Array.from(new Uint8Array(credential.response.clientDataJSON)))),
-          attestationObject: btoa(String.fromCharCode(...Array.from(new Uint8Array((credential.response as AuthenticatorAttestationResponse).attestationObject)))),
+          clientDataJSON: base64buffer.encode(credential.response.clientDataJSON),
+          attestationObject: base64buffer.encode((credential.response as AuthenticatorAttestationResponse).attestationObject),
         },
-        transports: (credential as any).transports
+        type: credential.type
       };
 
       appendResult({'status': 'sendingcredentials', 'credentials': transferrableCredentials });
