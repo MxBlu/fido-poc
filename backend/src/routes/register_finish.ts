@@ -5,7 +5,7 @@ import { jwtVerify } from "jose";
 import { ORIGIN } from "../constants.js";
 import { ChallengeJWT, FIDO2Credential } from "../models.js";
 import { Fido2, ServerKP, Users } from "../runtime_globals.js";
-import { ab2str } from "../utils/ab2str.js";
+import { b64_encode } from "../utils/b64.js";
 import { Logger } from "../utils/logger.js";
 
 /** Module logger */
@@ -49,7 +49,7 @@ export async function registerFinishHandle(req: Request, res: Response): Promise
   try {
     // Validate the attestation against the challenge
     const attestationRes = await Fido2.attestationResult(body.result, { 
-      challenge: jwt.challenge,
+      challenge: jwt.challenge_b64,
       factor: 'first',
       origin: ORIGIN
     });
@@ -61,12 +61,12 @@ export async function registerFinishHandle(req: Request, res: Response): Promise
     user.userHandle = jwt.sub;
     const credential: FIDO2Credential = {
       counter: attestationRes.authnrData.get('counter'),
-      credentialId: attestationRes.authnrData.get('credId'),
+      credentialId_b64: b64_encode(attestationRes.authnrData.get('credId')),
       publicKey: attestationRes.authnrData.get('credentialPublicKeyPem')
     };
     user.credentials.push(credential);
     
-    logger.info(`New credential registered: ${ab2str(credential.credentialId)}`);
+    logger.info(`New credential registered: ${credential.credentialId_b64}`);
 
     // Return success
     res.json(<RegistrationFinishResponse> { 'status': 'ok' });

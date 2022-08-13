@@ -11,12 +11,25 @@ export interface UserData {
 /** Data to represent a FIDO2 credential */
 export interface FIDO2Credential {
   counter: number;
-  credentialId: ArrayBuffer;
+  credentialId_b64: string;
   publicKey: string;
 }
 
 /** JWT interface data passed around during registration */
-export type ChallengeJWT = JWTPayload & { 
+export type ChallengeJWT = JWTPayload & {
   userName?: string;
-  challenge: string; 
+  challenge_b64: string;
 };
+
+/** Slight variation of the attestation request interface to facilitate transport over JSON */
+export interface AttestationOptionsWireFormat {
+  rp: { name: string; id: string; icon?: string };
+  user: { id: string, name: string, displayName: string };
+  challenge: string;
+  pubKeyCredParams: Array<{ type: "public-key"; alg: number }>;
+  timeout?: number;
+  attestation?: AttestationConveyancePreference;
+  authenticatorSelectionCriteria?: AuthenticatorSelectionCriteria;
+  rawChallenge?: ArrayBuffer;
+  extensions?: AuthenticationExtensionsClientInputs;
+}

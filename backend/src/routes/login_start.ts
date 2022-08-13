@@ -1,7 +1,10 @@
 import assert from "assert";
 import { Request, Response } from "express";
+import { PublicKeyCredentialRequestOptions } from "fido2-lib";
 import { SignJWT } from "jose";
+import { ChallengeJWT } from "../models.js";
 import { Fido2, ServerKP, Users } from "../runtime_globals.js";
+import { b64_decode, b64_encode } from "../utils/b64.js";
 import { Logger } from "../utils/logger.js";
 
 /** Module logger */
@@ -16,6 +19,7 @@ interface LoginStartRequest {
 interface LoginStartResponse {
   error?: string;
   token?: string;
+  challenge_b64?: string;
   options?: PublicKeyCredentialRequestOptions;
 }
 
@@ -55,7 +59,7 @@ export async function loginStartHandle(req: Request, res: Response): Promise<voi
     }
 
     // Add in credentials from request user
-    opts.allowCredentials = user.credentials.map(c => ({ id: c.credentialId, type: 'public-key' }));
+    opts.allowCredentials = user.credentials.map(c => ({ id: b64_decode(c.credentialId_b64), type: 'public-key' }));
 
     sub = user.userHandle;
     userName = user.userName;
@@ -63,11 +67,14 @@ export async function loginStartHandle(req: Request, res: Response): Promise<voi
     logger.info(`General attestation request`);
   }
 
+  // Encode the challenge to base 64
+  const challenge_b64 = b64_encode(opts.challenge);
+
   // Sign a JWT and store the user ID and challenge on it for later retrieval
-  const jwt = await new SignJWT({
+  const jwt = await new SignJWT(<ChallengeJWT> {
     sub: sub,
     userName: userName,
-    challenge: opts.challenge
+    challenge_b64: challenge_b64
   })
   .setExpirationTime('5m')
   .setProtectedHeader({ alg: 'ES256' })
@@ -76,6 +83,7 @@ export async function loginStartHandle(req: Request, res: Response): Promise<voi
   // Send the login options and signed JWT to the user
   res.json(<LoginStartResponse> {
     'token': jwt,
+    'challenge_b64': challenge_b64,
     'options': opts
   });
   return;

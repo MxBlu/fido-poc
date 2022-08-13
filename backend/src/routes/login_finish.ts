@@ -6,6 +6,7 @@ import { ORIGIN } from "../constants.js";
 import { ChallengeJWT, FIDO2Credential, UserData } from "../models.js";
 import { Fido2, ServerKP, Users } from "../runtime_globals.js";
 import { ab2str } from "../utils/ab2str.js";
+import { b64_decode } from "../utils/b64.js";
 import { Logger } from "../utils/logger.js";
 
 /** Module logger */
@@ -57,12 +58,12 @@ export async function loginFinishHandle(req: Request, res: Response): Promise<vo
 
       // If a username is present, look for the credentials under that user
       user = Users.get(jwt.userName);
-      cred = user.credentials.filter(c => c.credentialId == body.result.rawId)[0];
+      cred = user.credentials.filter(c => b64_decode(c.credentialId_b64) == body.result.rawId)[0];
     } else {
       logger.info(`Resident key login attempt`);
       // If no username is present, look through all the users for a credential that matches
       for (const curUser of Users.values()) {
-        const potentialCreds = curUser.credentials.filter(c => c.credentialId == body.result.rawId);
+        const potentialCreds = curUser.credentials.filter(c => b64_decode(c.credentialId_b64) == body.result.rawId);
         if (potentialCreds.length > 0) {
           logger.info(`Matching user found: ${curUser.userName}`);
           // Keep track of the user and matching credential
@@ -82,12 +83,12 @@ export async function loginFinishHandle(req: Request, res: Response): Promise<vo
 
     // Validate the assertion against the challenge
     const assertionRes = await Fido2.assertionResult(body.result, {
-      challenge: jwt.challenge,
+      challenge: jwt.challenge_b64,
       origin: ORIGIN,
       factor: 'first',
       publicKey: cred.publicKey,
       prevCounter: cred.counter,
-      userHandle: ab2str(cred.credentialId)
+      userHandle: cred.credentialId_b64
     });
 
     // Update the counter on the credential

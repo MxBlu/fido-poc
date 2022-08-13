@@ -1,7 +1,7 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import React, { useState } from 'react';
 import './App.css';
-import { LoginStartRequest, LoginStartResponse, RegistrationFinishRequest, RegistrationStartRequest, RegistrationStartResponse } from './request_interfaces.js';
+import { LoginStartRequest, LoginStartResponse, RegistrationFinishRequest, RegistrationFinishResponse, RegistrationStartRequest, RegistrationStartResponse } from './request_interfaces.js';
 
 const client = axios.create({
   baseURL: "http://localhost:8080"
@@ -10,7 +10,12 @@ const client = axios.create({
 function App() {
   const [displayName, setDisplayName] = useState("");
   const [userName, setUserName] = useState("");
-  const [result, setResult] = useState<Record<string, any> | null>(null);
+  const [result, setResult] = useState("");
+
+  const appendResult = (newResult: any): void => {
+    const jsonString = JSON.stringify(newResult);
+    setResult(result => result + '\n' + jsonString);
+  }
 
   const handleDisplayNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newDisplayName = event.target.value;
@@ -24,17 +29,76 @@ function App() {
 
   const handleLogin = async (event: React.MouseEvent<HTMLButtonElement>): Promise<void> => {
     event.preventDefault();
-    setResult({'status': 'loggingIn'});
+    appendResult({'status': 'loggingIn'});
+
+    // const loginData: LoginStartRequest = {
+    //   userName: userName
+    // };
+
+    // try {
+    //   let resp = await client.post('/login/start', loginData);
+    //   let respData = resp.data as LoginStartResponse;
+
+    //   const jwt = respData.token;
+    //   const opts = respData.options;
+
+    //   setResult({'status': resp.data });
+    // } catch (e) {
+    //   setResult({'error': e });
+    // }
   }
 
   const handleRegistration = async (event: React.MouseEvent<HTMLButtonElement>): Promise<void> => {
     event.preventDefault();
-    setResult({'status': 'registering'});
-  }
+    appendResult({'status': 'registering'});
 
-  let resultText = "";
-  if (result != null) {
-    resultText = JSON.stringify(result, null, 4);
+    try {
+      const initialRegistrationData: RegistrationStartRequest = {
+        displayName: displayName,
+        userName: userName
+      };
+
+      const startResp = await client.post('/register/start', initialRegistrationData);
+      const startRespData = startResp.data as RegistrationStartResponse;
+
+      const jwt = startRespData.token;
+      const opts: CredentialCreationOptions = {
+        publicKey: {
+          challenge: Uint8Array.from(atob(startRespData.options.challenge), c => c.charCodeAt(0)),
+          pubKeyCredParams: startRespData.options.pubKeyCredParams,
+          rp: startRespData.options.rp,
+          user: {
+            ...startRespData.options.user,
+            id: Uint8Array.from(atob(startRespData.options.user.id), c => c.charCodeAt(0)),
+          },
+          attestation: startRespData.options.attestation,
+          authenticatorSelection: startRespData.options.authenticatorSelectionCriteria,
+          timeout: startRespData.options.timeout
+        }
+      };
+      
+      appendResult({'status': 'gotchallenge', 'data': opts });
+      
+      (window as any).credOpts = opts;
+
+      const credentials = await navigator.credentials.create(opts);
+
+      appendResult({'status': 'credentialscreated', 'credentials': credentials });
+
+      const registrationFinishData: RegistrationFinishRequest = {
+        result: credentials as PublicKeyCredential,
+        token: jwt
+      }
+      const finishResp = await client.post('/register/finish', registrationFinishData);
+      const finishRespData = finishResp.data as RegistrationFinishResponse;
+
+      appendResult(finishRespData);
+    } catch (e) {
+      if (e instanceof AxiosError) {
+        const axiosError = e as AxiosError;
+        appendResult(axiosError.response?.data ?? {'error': e});
+      }
+    }
   }
 
   return (
@@ -61,7 +125,7 @@ function App() {
         </div>
       </form>
       <div className='result'>
-        {resultText}
+        {result}
       </div>
     </div>
   );
