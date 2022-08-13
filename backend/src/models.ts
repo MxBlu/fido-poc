@@ -38,6 +38,6 @@ export interface AttestationOptionsWireFormat {
 export interface AttestationResultWireFormat {
   id?: string;
   rawId?: string;
-  transports?: string[];
+  type?: string;
   response: { clientDataJSON: string; attestationObject: string };
 }
