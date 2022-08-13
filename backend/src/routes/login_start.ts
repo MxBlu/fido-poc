@@ -1,10 +1,9 @@
 import assert from "assert";
+import * as base64buffer from 'base64-arraybuffer';
 import { Request, Response } from "express";
-import { PublicKeyCredentialRequestOptions } from "fido2-lib";
 import { SignJWT } from "jose";
-import { ChallengeJWT } from "../models.js";
+import { AssertionOptionsWireFormat, ChallengeJWT } from "../models.js";
 import { Fido2, ServerKP, Users } from "../runtime_globals.js";
-import { b64_decode, b64_encode } from "../utils/b64.js";
 import { Logger } from "../utils/logger.js";
 
 /** Module logger */
@@ -19,8 +18,7 @@ interface LoginStartRequest {
 interface LoginStartResponse {
   error?: string;
   token?: string;
-  challenge_b64?: string;
-  options?: PublicKeyCredentialRequestOptions;
+  options?: AssertionOptionsWireFormat;
 }
 
 /** 
@@ -41,6 +39,13 @@ export async function loginStartHandle(req: Request, res: Response): Promise<voi
 
   // Generate assertion
   const opts = await Fido2.assertionOptions();
+  // Encode all ArrayBuffers to base 64
+  const transferrableOpts: AssertionOptionsWireFormat = {
+    ...opts,
+    challenge: base64buffer.encode(opts.challenge),
+    rawChallenge: opts.rawChallenge ? base64buffer.encode(opts.rawChallenge) : null,
+    allowCredentials: []
+  };
 
   // `sub` and `userName` will only get set if we have a valid username
   let sub = null;
@@ -59,7 +64,7 @@ export async function loginStartHandle(req: Request, res: Response): Promise<voi
     }
 
     // Add in credentials from request user
-    opts.allowCredentials = user.credentials.map(c => ({ id: b64_decode(c.credentialId_b64), type: 'public-key' }));
+    transferrableOpts.allowCredentials = user.credentials.map(c => ({ id: c.credentialId_b64, type: 'public-key' }));
 
     sub = user.userHandle;
     userName = user.userName;
@@ -67,14 +72,11 @@ export async function loginStartHandle(req: Request, res: Response): Promise<voi
     logger.info(`General attestation request`);
   }
 
-  // Encode the challenge to base 64
-  const challenge_b64 = b64_encode(opts.challenge);
-
   // Sign a JWT and store the user ID and challenge on it for later retrieval
   const jwt = await new SignJWT(<ChallengeJWT> {
     sub: sub,
     userName: userName,
-    challenge_b64: challenge_b64
+    challenge_b64: transferrableOpts.challenge
   })
   .setExpirationTime('5m')
   .setProtectedHeader({ alg: 'ES256' })
@@ -83,8 +85,7 @@ export async function loginStartHandle(req: Request, res: Response): Promise<voi
   // Send the login options and signed JWT to the user
   res.json(<LoginStartResponse> {
     'token': jwt,
-    'challenge_b64': challenge_b64,
-    'options': opts
+    'options': transferrableOpts
   });
   return;
 }

@@ -1,12 +1,11 @@
 import assert from "assert";
+import * as base64buffer from 'base64-arraybuffer';
 import { Request, Response } from "express";
 import { AssertionResult } from "fido2-lib";
 import { jwtVerify } from "jose";
 import { ORIGIN } from "../constants.js";
-import { ChallengeJWT, FIDO2Credential, UserData } from "../models.js";
+import { AssertionResultWireFormat, ChallengeJWT, FIDO2Credential, UserData } from "../models.js";
 import { Fido2, ServerKP, Users } from "../runtime_globals.js";
-import { ab2str } from "../utils/ab2str.js";
-import { b64_decode } from "../utils/b64.js";
 import { Logger } from "../utils/logger.js";
 
 /** Module logger */
@@ -15,7 +14,7 @@ const logger = new Logger("LoginFinish");
 /** Request body for /login/finish */
 interface LoginFinishRequest {
   token: string;
-  result: AssertionResult; // TODO: Maybe switch to PublicKeyCredential
+  result: AssertionResultWireFormat;
 }
 
 /** Response body for /login/finish */
@@ -58,12 +57,12 @@ export async function loginFinishHandle(req: Request, res: Response): Promise<vo
 
       // If a username is present, look for the credentials under that user
       user = Users.get(jwt.userName);
-      cred = user.credentials.filter(c => b64_decode(c.credentialId_b64) == body.result.rawId)[0];
+      cred = user.credentials.filter(c => c.credentialId_b64 == body.result.rawId)[0];
     } else {
       logger.info(`Resident key login attempt`);
       // If no username is present, look through all the users for a credential that matches
       for (const curUser of Users.values()) {
-        const potentialCreds = curUser.credentials.filter(c => b64_decode(c.credentialId_b64) == body.result.rawId);
+        const potentialCreds = curUser.credentials.filter(c => c.credentialId_b64 == body.result.rawId);
         if (potentialCreds.length > 0) {
           logger.info(`Matching user found: ${curUser.userName}`);
           // Keep track of the user and matching credential
@@ -76,13 +75,24 @@ export async function loginFinishHandle(req: Request, res: Response): Promise<vo
 
     // If we couldn't find a matching set of credentials, throw a 403
     if (cred == null) {
-      logger.warn(`Matching credentials not found: ${ab2str(body.result.rawId)}`);
+      logger.warn(`Matching credentials not found: ${body.result.rawId}`);
       res.status(403).json(<LoginFinishResponse> { 'error': 'Unknown credentials' });
       return;
     }
 
+    // Decode all the base 64 encoded data to ArrayBuffers
+    const result: AssertionResult = {
+      ...body.result,
+      id: base64buffer.decode(body.result.id),
+      rawId: base64buffer.decode(body.result.rawId),
+      response: {
+        ...body.result.response,
+        authenticatorData: base64buffer.decode(body.result.response.authenticatorData)
+      }
+    }
+
     // Validate the assertion against the challenge
-    const assertionRes = await Fido2.assertionResult(body.result, {
+    const assertionRes = await Fido2.assertionResult(result, {
       challenge: jwt.challenge_b64,
       origin: ORIGIN,
       factor: 'first',

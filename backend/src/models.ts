@@ -41,3 +41,29 @@ export interface AttestationResultWireFormat {
   type?: string;
   response: { clientDataJSON: string; attestationObject: string };
 }
+
+export interface AssertionOptionsWireFormat {
+  challenge: string;
+  timeout?: number;
+  rpId?: string;
+  attestation?: AttestationConveyancePreference;
+  userVerification?: "required" | "preferred" | "discouraged";
+  rawChallenge?: string;
+  extensions?: AuthenticationExtensionsClientInputs;
+  allowCredentials?: {
+    id: string;
+    transports?: AuthenticatorTransport[];
+    type: PublicKeyCredentialType;
+  }[];
+}
+
+export interface AssertionResultWireFormat {
+  id?: string;
+  rawId?: string;
+  response: {
+    clientDataJSON: string;
+    authenticatorData: string;
+    signature: string;
+    userHandle?: string;
+  };
+}
