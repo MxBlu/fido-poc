@@ -34,5 +34,5 @@ export function b64_to_b64url(b64: string): string {
  * @returns Base 64 string
  */
  export function b64url_to_b64(b64: string): string {
-  return b64.replace(/+/g, '-').replace(/\//g, '_');
+  return b64.replace(/\+/g, '-').replace(/\//g, '_');
 }
