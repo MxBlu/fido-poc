@@ -42,6 +42,7 @@ export interface AttestationResultWireFormat {
   response: { clientDataJSON: string; attestationObject: string };
 }
 
+/** Slight variation of the assertion request interface to facilitate transport over JSON */
 export interface AssertionOptionsWireFormat {
   challenge: string;
   timeout?: number;
@@ -57,6 +58,7 @@ export interface AssertionOptionsWireFormat {
   }[];
 }
 
+/** Slight variation of the assertion result interface to facilitate transport over JSON */
 export interface AssertionResultWireFormat {
   id?: string;
   rawId?: string;

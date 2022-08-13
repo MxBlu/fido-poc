@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import React, { useState } from 'react';
 import * as base64buffer from 'base64-arraybuffer';
 import './App.css';
-import { AttestationResultWireFormat, LoginStartRequest, LoginStartResponse, RegistrationFinishRequest, RegistrationFinishResponse, RegistrationStartRequest, RegistrationStartResponse } from './request_interfaces.js';
+import { AssertionResultWireFormat, AttestationResultWireFormat, LoginFinishRequest, LoginFinishResponse, LoginStartRequest, LoginStartResponse, RegistrationFinishRequest, RegistrationFinishResponse, RegistrationStartRequest, RegistrationStartResponse } from './request_interfaces.js';
 
 const client = axios.create({
   baseURL: "https://fido.mxblue.net.au/api"
@@ -32,21 +32,50 @@ function App() {
     event.preventDefault();
     appendResult({'status': 'loggingIn'});
 
-    // const loginData: LoginStartRequest = {
-    //   userName: userName
-    // };
+    try {
+      const loginData: LoginStartRequest = {
+        userName: userName
+      };
 
-    // try {
-    //   let resp = await client.post('/login/start', loginData);
-    //   let respData = resp.data as LoginStartResponse;
+      let startResp = await client.post('/login/start', loginData);
+      let startRespData = startResp.data as LoginStartResponse;
 
-    //   const jwt = respData.token;
-    //   const opts = respData.options;
+      appendResult({'status': 'gotchallenge', 'data': startRespData.options.challenge });
+      const jwt = startRespData.token;
+      const opts: CredentialRequestOptions = {
+        publicKey: {
+          ...startRespData.options,
+          challenge: base64buffer.decode(startRespData.options.challenge),
+          allowCredentials: startRespData.options.allowCredentials?.map(
+            c => ({ id: base64buffer.decode(c.id), type: c.type }))
+        }
+      };
 
-    //   setResult({'status': resp.data });
-    // } catch (e) {
-    //   setResult({'error': e });
-    // }
+      const credential = await navigator.credentials.get(opts) as PublicKeyCredential;
+      const assertionResponse = credential.response as AuthenticatorAssertionResponse;
+      const transferrableCredentials: AssertionResultWireFormat = {
+        id: credential.id,
+        rawId: base64buffer.encode(credential.rawId),
+        response: {
+          clientDataJSON: base64buffer.encode(credential.response.clientDataJSON),
+          authenticatorData: base64buffer.encode(assertionResponse.authenticatorData),
+          signature: base64buffer.encode(assertionResponse.signature),
+          userHandle: assertionResponse.userHandle ? base64buffer.encode(assertionResponse.userHandle) : undefined
+        }
+      };
+
+      appendResult({'status': 'sendingcredential', 'credential': credential.id });
+      const loginFinishData: LoginFinishRequest = {
+        result: transferrableCredentials,
+        token: jwt
+      }
+      const finishResp = await client.post('/login/finish', loginFinishData);
+      const finishRespData = finishResp.data as LoginFinishResponse;
+
+      appendResult(finishRespData);
+    } catch (e) {
+      appendResult({'error': e });
+    }
   }
 
   const handleRegistration = async (event: React.MouseEvent<HTMLButtonElement>): Promise<void> => {

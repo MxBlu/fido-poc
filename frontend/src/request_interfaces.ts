@@ -8,14 +8,13 @@ export interface LoginStartRequest {
 export interface LoginStartResponse {
   error?: string;
   token: string;
-  challenge_64: string;
-  options: PublicKeyCredentialRequestOptions;
+  options: AssertionOptionsWireFormat;
 }
 
 /** Request body for /login/finish */
 export interface LoginFinishRequest {
   token: string;
-  result: PublicKeyCredential;
+  result: AssertionResultWireFormat;
 }
 
 /** Response body for /login/finish */
@@ -72,4 +71,32 @@ export interface AttestationResultWireFormat {
   rawId?: string;
   type?: string;
   response: { clientDataJSON: string; attestationObject: string };
+}
+
+/** Slight variation of the assertion request interface to facilitate transport over JSON */
+export interface AssertionOptionsWireFormat {
+  challenge: string;
+  timeout?: number;
+  rpId?: string;
+  attestation?: AttestationConveyancePreference;
+  userVerification?: "required" | "preferred" | "discouraged";
+  rawChallenge?: string;
+  extensions?: AuthenticationExtensionsClientInputs;
+  allowCredentials?: {
+    id: string;
+    transports?: AuthenticatorTransport[];
+    type: PublicKeyCredentialType;
+  }[];
+}
+
+/** Slight variation of the assertion result interface to facilitate transport over JSON */
+export interface AssertionResultWireFormat {
+  id?: string;
+  rawId?: string;
+  response: {
+    clientDataJSON: string;
+    authenticatorData: string;
+    signature: string;
+    userHandle?: string;
+  };
 }
