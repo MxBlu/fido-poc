@@ -2,6 +2,7 @@ import { Fido2Lib } from "fido2-lib";
 import { generateKeyPair, GenerateKeyPairResult } from "jose";
 import { HOSTNAME } from "./constants.js";
 import { UserData } from "./models.js";
+import { Logger } from "./utils/logger.js";
 
 export const Fido2 = new Fido2Lib({
   timeout: 60,
@@ -16,7 +17,7 @@ export const Fido2 = new Fido2Lib({
 export let ServerKP: GenerateKeyPairResult = null;
 generateKeyPair('ES256').then(kp => { 
   ServerKP = kp;
-  console.log('Keypair ready');
+  new Logger("KeyPairGen").info('Keypair ready');
 });
 
 /** Global map of usernames to user data */
