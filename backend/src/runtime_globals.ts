@@ -5,7 +5,7 @@ import { UserData } from "./models.js";
 import { Logger } from "./utils/logger.js";
 
 export const Fido2 = new Fido2Lib({
-  timeout: 120,
+  timeout: 120000,
   rpId: HOSTNAME,
   rpName: "MxBlue Server",
   attestation: "none",
