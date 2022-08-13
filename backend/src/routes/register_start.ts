@@ -1,10 +1,10 @@
 import assert from "assert";
+import * as base64buffer from 'base64-arraybuffer';
 import * as crypto from "crypto";
 import { Request, Response } from "express";
 import { SignJWT } from "jose";
 import { AttestationOptionsWireFormat, ChallengeJWT } from "../models.js";
 import { Fido2, ServerKP, Users } from "../runtime_globals.js";
-import { b64_encode } from "../utils/b64.js";
 import { Logger } from "../utils/logger.js";
 
 /** Module logger */
@@ -55,7 +55,7 @@ export async function registerStartHandle(req: Request, res: Response): Promise<
 
   // Generate registration options
   const opts = await Fido2.attestationOptions();
-  opts.user.id = b64_encode(userId);
+  opts.user.id = base64buffer.encode(new TextEncoder().encode(userId));
   opts.user.displayName = body.displayName;
   opts.user.name = body.userName;
 
@@ -66,7 +66,7 @@ export async function registerStartHandle(req: Request, res: Response): Promise<
   });
 
   // Encode the challenge to base 64
-  const challenge_b64 = b64_encode(opts.challenge);
+  const challenge_b64 = base64buffer.encode(opts.challenge);
 
   // Sign a JWT and store the user ID and challenge on it for later retrieval
   const jwt = await new SignJWT(<ChallengeJWT> { 

@@ -1,11 +1,11 @@
 import assert from "assert";
+import * as base64buffer from 'base64-arraybuffer';
 import { Request, Response } from "express";
 import { AttestationResult } from "fido2-lib";
 import { jwtVerify } from "jose";
 import { ORIGIN } from "../constants.js";
 import { AttestationResultWireFormat, ChallengeJWT, FIDO2Credential } from "../models.js";
 import { Fido2, ServerKP, Users } from "../runtime_globals.js";
-import { b64url_to_b64, b64_decode, b64_encode, b64_to_b64url } from "../utils/b64.js";
 import { Logger } from "../utils/logger.js";
 
 /** Module logger */
@@ -48,19 +48,19 @@ export async function registerFinishHandle(req: Request, res: Response): Promise
 
   // Decode base 64 data back to Array Buffers
   const result: AttestationResult = {
-    id: b64_decode(b64url_to_b64(body.result.id)),
-    rawId: b64_decode(body.result.rawId),
+    ...body.result,
+    id: base64buffer.decode(body.result.id),
+    rawId: base64buffer.decode(body.result.rawId),
     response: {
-      attestationObject: b64_to_b64url(body.result.response.attestationObject),
-      clientDataJSON: b64_to_b64url(body.result.response.clientDataJSON)
-    },
-    transports: body.result.transports
+      attestationObject: body.result.response.attestationObject,
+      clientDataJSON: body.result.response.clientDataJSON
+    }
   }
 
   try {
     // Validate the attestation against the challenge
-    const attestationRes = await Fido2.attestationResult(result, { 
-      challenge: b64_to_b64url(jwt.challenge_b64),
+    const attestationRes = await Fido2.attestationResult(result, {
+      challenge: jwt.challenge_b64,
       factor: 'first',
       origin: ORIGIN
     });
@@ -72,10 +72,10 @@ export async function registerFinishHandle(req: Request, res: Response): Promise
     user.userHandle = jwt.sub;
     const credential: FIDO2Credential = {
       counter: attestationRes.authnrData.get('counter'),
-      credentialId_b64: b64_encode(attestationRes.authnrData.get('credId')),
+      credentialId_b64: base64buffer.encode(attestationRes.authnrData.get('credId')),
       publicKey: attestationRes.authnrData.get('credentialPublicKeyPem')
     };
-    user.credentials.push(credential);
+    user.credentials = [ credential ];
     
     logger.info(`New credential registered: ${credential.credentialId_b64}`);
 
