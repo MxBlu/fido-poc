@@ -57,6 +57,7 @@ function logRequest(req: Request, res: Response, next: NextFunction): void {
 function logError(err: Error, req: Request, res: Response, _next: NextFunction): void {
   // Log the error and return a 500
   logger.error(`Error processing request: ${req.path} - ${err.name}: ${err.message}`);
+  console.error(err.stack);
   res.sendStatus(500);
 }
 

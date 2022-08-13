@@ -75,7 +75,6 @@ function App() {
       appendResult({'status': 'gotchallenge', 'data': opts });
 
       const credential = await navigator.credentials.create(opts) as PublicKeyCredential;
-      appendResult({'status': 'credentialscreated', 'credentials': credential?.id });
 
       const transferrableCredentials: AttestationResultWireFormat = {
         ...credential,
@@ -86,6 +85,7 @@ function App() {
         }
       };
 
+      appendResult({'status': 'sendingcredentials', 'credentials': transferrableCredentials });
       const registrationFinishData: RegistrationFinishRequest = {
         result: transferrableCredentials,
         token: jwt
