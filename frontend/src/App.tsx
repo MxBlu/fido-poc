@@ -4,7 +4,7 @@ import './App.css';
 import { LoginStartRequest, LoginStartResponse, RegistrationFinishRequest, RegistrationFinishResponse, RegistrationStartRequest, RegistrationStartResponse } from './request_interfaces.js';
 
 const client = axios.create({
-  baseURL: "http://localhost:8080"
+  baseURL: "https://fido.mxblue.net.au"
 });
 
 function App() {
