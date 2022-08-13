@@ -77,12 +77,13 @@ function App() {
       const credential = await navigator.credentials.create(opts) as PublicKeyCredential;
 
       const transferrableCredentials: AttestationResultWireFormat = {
-        ...credential,
+        id: credential.id,
         rawId: btoa(String.fromCharCode(...Array.from(new Uint8Array(credential.rawId)))),
         response: {
           clientDataJSON: btoa(String.fromCharCode(...Array.from(new Uint8Array(credential.response.clientDataJSON)))),
           attestationObject: btoa(String.fromCharCode(...Array.from(new Uint8Array((credential.response as AuthenticatorAttestationResponse).attestationObject)))),
-        }
+        },
+        transports: (credential as any).transports
       };
 
       appendResult({'status': 'sendingcredentials', 'credentials': transferrableCredentials });
