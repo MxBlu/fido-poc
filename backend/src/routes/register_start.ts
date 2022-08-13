@@ -24,7 +24,7 @@ export async function registerStartHandle(req: Request, res: Response): Promise<
   try {
     body = JSON.parse(req.body);
     assert(typeof body.displayName === 'string');
-    assert(typeof body.userName === 'string');
+    assert(typeof body.userName === 'string' && body.userName.length > 0);
   } catch (e) {
     const error = <Error> e;
     logger.error(error.message);

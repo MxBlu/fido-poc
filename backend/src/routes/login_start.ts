@@ -40,7 +40,7 @@ export async function loginStartHandle(req: Request, res: Response): Promise<voi
   let userName = null;
 
   // Add in allowed credentials we we're treating it as a username based login
-  if (body.userName != null) {
+  if (body.userName != null && body.userName.length > 0) {
     logger.info(`Attestation request for username: ${body.userName}`);
     // Handle as non-resident key login
     const user = Users.get(body.userName);
