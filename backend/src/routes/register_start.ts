@@ -79,6 +79,7 @@ export async function registerStartHandle(req: Request, res: Response): Promise<
    .sign(ServerKP.privateKey);
 
   // Send the registration options and signed JWT to the user
+  // All ArrayBuffers need to be encoded into b64 for transport
   res.json(<RegistrationStartResponse> {
     'token': jwt,
     'options': {

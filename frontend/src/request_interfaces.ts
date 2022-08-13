@@ -44,7 +44,7 @@ export interface RegistrationStartResponse {
 /** Request body for /register/finish */
 export interface RegistrationFinishRequest {
   token: string;
-  result: PublicKeyCredential;
+  result: AttestationResultWireFormat;
 }
 
 /** Response body for /register/finish */
@@ -64,4 +64,12 @@ export interface AttestationOptionsWireFormat {
   authenticatorSelectionCriteria?: AuthenticatorSelectionCriteria;
   rawChallenge?: ArrayBuffer;
   extensions?: AuthenticationExtensionsClientInputs;
+}
+
+/** Slight variation of the attestation result interface to facilitate transport over JSON */
+export interface AttestationResultWireFormat {
+  id?: string;
+  rawId?: string;
+  transports?: string[];
+  response: { clientDataJSON: string; attestationObject: string };
 }

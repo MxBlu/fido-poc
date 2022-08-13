@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import React, { useState } from 'react';
 import './App.css';
-import { LoginStartRequest, LoginStartResponse, RegistrationFinishRequest, RegistrationFinishResponse, RegistrationStartRequest, RegistrationStartResponse } from './request_interfaces.js';
+import { AttestationResultWireFormat, LoginStartRequest, LoginStartResponse, RegistrationFinishRequest, RegistrationFinishResponse, RegistrationStartRequest, RegistrationStartResponse } from './request_interfaces.js';
 
 const client = axios.create({
   baseURL: "https://fido.mxblue.net.au/api"
@@ -64,29 +64,30 @@ function App() {
       const jwt = startRespData.token;
       const opts: CredentialCreationOptions = {
         publicKey: {
+          ...startRespData.options,
           challenge: Uint8Array.from(atob(startRespData.options.challenge), c => c.charCodeAt(0)),
-          pubKeyCredParams: startRespData.options.pubKeyCredParams,
-          rp: startRespData.options.rp,
           user: {
             ...startRespData.options.user,
             id: Uint8Array.from(atob(startRespData.options.user.id), c => c.charCodeAt(0)),
-          },
-          attestation: startRespData.options.attestation,
-          authenticatorSelection: startRespData.options.authenticatorSelectionCriteria,
-          timeout: startRespData.options.timeout
+          }
         }
       };
-      
       appendResult({'status': 'gotchallenge', 'data': opts });
-      
-      (window as any).credOpts = opts;
 
-      const credentials = await navigator.credentials.create(opts);
+      const credential = await navigator.credentials.create(opts) as PublicKeyCredential;
+      appendResult({'status': 'credentialscreated', 'credentials': credential?.id });
 
-      appendResult({'status': 'credentialscreated', 'credentials': credentials });
+      const transferrableCredentials: AttestationResultWireFormat = {
+        ...credential,
+        rawId: btoa(String.fromCharCode(...Array.from(new Uint8Array(credential.rawId)))),
+        response: {
+          clientDataJSON: btoa(String.fromCharCode(...Array.from(new Uint8Array(credential.response.clientDataJSON)))),
+          attestationObject: btoa(String.fromCharCode(...Array.from(new Uint8Array((credential.response as AuthenticatorAttestationResponse).attestationObject)))),
+        }
+      };
 
       const registrationFinishData: RegistrationFinishRequest = {
-        result: credentials as PublicKeyCredential,
+        result: transferrableCredentials,
         token: jwt
       }
       const finishResp = await client.post('/register/finish', registrationFinishData);

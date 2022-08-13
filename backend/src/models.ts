@@ -33,3 +33,11 @@ export interface AttestationOptionsWireFormat {
   rawChallenge?: ArrayBuffer;
   extensions?: AuthenticationExtensionsClientInputs;
 }
+
+/** Slight variation of the attestation result interface to facilitate transport over JSON */
+export interface AttestationResultWireFormat {
+  id?: string;
+  rawId?: string;
+  transports?: string[];
+  response: { clientDataJSON: string; attestationObject: string };
+}

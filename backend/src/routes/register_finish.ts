@@ -3,9 +3,9 @@ import { Request, Response } from "express";
 import { AttestationResult } from "fido2-lib";
 import { jwtVerify } from "jose";
 import { ORIGIN } from "../constants.js";
-import { ChallengeJWT, FIDO2Credential } from "../models.js";
+import { AttestationResultWireFormat, ChallengeJWT, FIDO2Credential } from "../models.js";
 import { Fido2, ServerKP, Users } from "../runtime_globals.js";
-import { b64_encode } from "../utils/b64.js";
+import { b64_decode, b64_encode, b64_to_b64url } from "../utils/b64.js";
 import { Logger } from "../utils/logger.js";
 
 /** Module logger */
@@ -14,7 +14,7 @@ const logger = new Logger("RegistrationFinish");
 /** Request body for /register/finish */
 interface RegistrationFinishRequest {
   token: string;
-  result: AttestationResult; // TODO: Maybe switch to PublicKeyCredential
+  result: AttestationResultWireFormat; // TODO: Maybe switch to PublicKeyCredential
 }
 
 /** Response body for /register/finish */
@@ -46,10 +46,21 @@ export async function registerFinishHandle(req: Request, res: Response): Promise
   
   logger.info(`Registration finish for username: ${jwt.userName}`);
 
+  // Decode base 64 data back to Array Buffers
+  const result: AttestationResult = {
+    id: b64_decode(body.result.id),
+    rawId: b64_decode(body.result.rawId),
+    response: {
+      attestationObject: b64_to_b64url(body.result.response.attestationObject),
+      clientDataJSON: b64_to_b64url(body.result.response.clientDataJSON)
+    },
+    transports: body.result.transports
+  }
+
   try {
     // Validate the attestation against the challenge
-    const attestationRes = await Fido2.attestationResult(body.result, { 
-      challenge: jwt.challenge_b64,
+    const attestationRes = await Fido2.attestationResult(result, { 
+      challenge: b64_to_b64url(jwt.challenge_b64),
       factor: 'first',
       origin: ORIGIN
     });
@@ -72,6 +83,9 @@ export async function registerFinishHandle(req: Request, res: Response): Promise
     res.json(<RegistrationFinishResponse> { 'status': 'ok' });
     return;
   } catch (e) {
+    // Clean up user since registration failed
+    Users.delete(jwt.userName);
+    // Log error
     const error = <Error> e;
     logger.warn(`Attestation failed: ${error.message}`);
     console.error(error.stack);
