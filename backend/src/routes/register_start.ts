@@ -10,7 +10,7 @@ const logger = new Logger("RegistrationStart");
 /** Request body for /register/start */
 interface RegistrationStartBody {
   displayName: string;
-  name: string;
+  userName: string;
 }
 
 /** 
@@ -24,7 +24,7 @@ export async function registerStartHandle(req: Request, res: Response): Promise<
   try {
     body = JSON.parse(req.body);
     assert(typeof body.displayName === 'string');
-    assert(typeof body.name === 'string');
+    assert(typeof body.userName === 'string');
   } catch (e) {
     const error = <Error> e;
     logger.error(error.message);
@@ -34,13 +34,13 @@ export async function registerStartHandle(req: Request, res: Response): Promise<
   }
 
   // Check username availability
-  if (Users.has(body.name)) {
-    logger.warn(`Username in use: ${body.name}`);
+  if (Users.has(body.userName)) {
+    logger.warn(`Username in use: ${body.userName}`);
     res.status(400).json({ 'error': 'Username in use' });
     return;
   }
   
-  logger.info(`Registration request for username: ${body.name}`);
+  logger.info(`Registration request for username: ${body.userName}`);
 
   // Generate a user ID
   const userId = crypto.randomUUID();
@@ -49,18 +49,18 @@ export async function registerStartHandle(req: Request, res: Response): Promise<
   const opts = await Fido2.attestationOptions();
   opts.user.id = userId;
   opts.user.displayName = body.displayName;
-  opts.user.name = body.name;
+  opts.user.name = body.userName;
 
   // Persist user details to user data
-  Users.set(body.name, {
-    userName: body.name,
+  Users.set(body.userName, {
+    userName: body.userName,
     displayName: body.displayName
   });
 
   // Sign a JWT and store the user ID and challenge on it for later retrieval
   const jwt = await new SignJWT({ 
     sub: userId,
-    userName: body.name,
+    userName: body.userName,
     challenge: opts.challenge
    })
    .setExpirationTime('5m')

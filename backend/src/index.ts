@@ -3,6 +3,7 @@ import Express, { NextFunction, Request, Response } from 'express';
 import { PORT } from './constants.js';
 import { loginFinishHandle } from './routes/login_finish.js';
 import { loginStartHandle } from './routes/login_start.js';
+import { purgeUserHandle } from './routes/purge_user.js';
 import { registerFinishHandle } from './routes/register_finish.js';
 import { registerStartHandle } from './routes/register_start.js';
 import { Logger } from './utils/logger.js';
@@ -92,6 +93,7 @@ app.post('/register/start', runAsync(registerStartHandle));
 app.post('/register/finish', runAsync(registerFinishHandle));
 app.post('/login/start', runAsync(loginStartHandle));
 app.post('/login/finish', runAsync(loginFinishHandle));
+app.post('/user/delete', purgeUserHandle);
 
 // Unknown route handler
 app.use(unknownRoute);
