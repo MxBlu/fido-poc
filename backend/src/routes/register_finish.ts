@@ -1,7 +1,6 @@
 import assert from "assert";
 import * as base64buffer from 'base64-arraybuffer';
 import { Request, Response } from "express";
-import { AttestationResult } from "fido2-lib";
 import { jwtVerify } from "jose";
 import { ORIGIN } from "../constants.js";
 import { AttestationResultWireFormat, ChallengeJWT, FIDO2Credential } from "../models.js";
@@ -46,17 +45,9 @@ export async function registerFinishHandle(req: Request, res: Response): Promise
   
   logger.info(`Registration finish for username: ${jwt.userName}`);
 
-  // Decode base 64 data back to Array Buffers
-  // The response object is fine as is, base64 decoding is built into Fido2Lib
-  const result: AttestationResult = {
-    ...body.result,
-    id: base64buffer.decode(body.result.id),
-    rawId: base64buffer.decode(body.result.rawId)
-  }
-
   try {
     // Validate the attestation against the challenge
-    const attestationRes = await Fido2.attestationResult(result, {
+    const attestationRes = await Fido2.attestationResult(body.result, {
       challenge: jwt.challenge_b64,
       factor: 'first', // First factor forces on UV, ensure not set to 'discouraged' in Fido2Lib options
       origin: ORIGIN

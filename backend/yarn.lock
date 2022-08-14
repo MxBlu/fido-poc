@@ -845,10 +845,9 @@ fastq@^1.6.0:
   dependencies:
     reusify "^1.0.4"
 
-fido2-lib@^3.2.5:
+fido2-lib@MxBlu/fido2-lib#type-fix:
   version "3.2.5"
-  resolved "https://registry.yarnpkg.com/fido2-lib/-/fido2-lib-3.2.5.tgz#2682592898e5f50594bcc6788a6ffd7654025e41"
-  integrity sha512-uDJsf/WNm74uos7baaxbK6vOjIZPOHUhal6FBKgy1ok1y3INI9kfUVkjVs5A7FF5WbUnpqoDEJXmhASZfl7AKw==
+  resolved "https://codeload.github.com/MxBlu/fido2-lib/tar.gz/17a3b01699553958923f9fbc4da4eec71e2d2315"
   dependencies:
     "@hexagon/base64" "~1.1.21"
     "@peculiar/webcrypto" "~1.4.0"

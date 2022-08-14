@@ -1,7 +1,6 @@
 import assert from "assert";
 import * as base64buffer from 'base64-arraybuffer';
 import { Request, Response } from "express";
-import { AssertionResult } from "fido2-lib";
 import { jwtVerify } from "jose";
 import { ORIGIN } from "../constants.js";
 import { AssertionResultWireFormat, ChallengeJWT, FIDO2Credential, UserData } from "../models.js";
@@ -80,21 +79,10 @@ export async function loginFinishHandle(req: Request, res: Response): Promise<vo
       return;
     }
 
-    // Decode all the base 64 encoded data to ArrayBuffers
-    const result: AssertionResult = {
-      ...body.result,
-      id: base64buffer.decode(body.result.id),
-      rawId: base64buffer.decode(body.result.rawId),
-      response: {
-        ...body.result.response,
-        authenticatorData: base64buffer.decode(body.result.response.authenticatorData)
-      }
-    }
-
     // User handle from the user needs to be converted to base64 first
     const userhandle_b64 = base64buffer.encode(new TextEncoder().encode(user.userHandle));
     // Validate the assertion against the challenge
-    const assertionRes = await Fido2.assertionResult(result, {
+    const assertionRes = await Fido2.assertionResult(body.result, {
       challenge: jwt.challenge_b64,
       origin: ORIGIN,
       factor: 'first', // First factor forces on UV, ensure not set to 'discouraged' in Fido2Lib options
