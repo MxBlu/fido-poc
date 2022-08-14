@@ -95,10 +95,10 @@ export async function loginFinishHandle(req: Request, res: Response): Promise<vo
     const assertionRes = await Fido2.assertionResult(result, {
       challenge: jwt.challenge_b64,
       origin: ORIGIN,
-      factor: 'first',
+      factor: 'first', // First factor forces on UV, ensure not set to 'discouraged' in Fido2Lib options
       publicKey: cred.publicKey,
       prevCounter: cred.counter,
-      userHandle: cred.credentialId_b64
+      userHandle: base64buffer.encode(new TextEncoder().encode(user.userHandle))
     });
 
     // Update the counter on the credential

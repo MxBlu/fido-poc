@@ -61,7 +61,7 @@ export async function registerFinishHandle(req: Request, res: Response): Promise
     // Validate the attestation against the challenge
     const attestationRes = await Fido2.attestationResult(result, {
       challenge: jwt.challenge_b64,
-      factor: 'first',
+      factor: 'first', // First factor forces on UV, ensure not set to 'discouraged' in Fido2Lib options
       origin: ORIGIN
     });
 
