@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import * as base64buffer from 'base64-arraybuffer';
 import './App.css';
 import { AssertionResultWireFormat, AttestationResultWireFormat, LoginFinishRequest, LoginFinishResponse, LoginStartRequest, LoginStartResponse, RegistrationFinishRequest, RegistrationFinishResponse, RegistrationStartRequest, RegistrationStartResponse } from './request_interfaces.js';
-import { FIDO2_BACKEND_URL } from './constants.js';
+import { FIDO2_BACKEND_URL } from './constants';
 
 // Axios client pointing at backend server
 const client = axios.create({
