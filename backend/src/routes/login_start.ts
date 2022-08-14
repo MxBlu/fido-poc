@@ -51,9 +51,10 @@ export async function loginStartHandle(req: Request, res: Response): Promise<voi
   let sub = null;
   let userName = null;
 
-  // Add in allowed credentials we we're treating it as a username based login
   if (body.userName != null && body.userName.length > 0) {
-    logger.info(`Attestation request for username: ${body.userName}`);
+    // Add in allowed credentials we we're treating it as a username based login
+    logger.info(`Assertion request for username: ${body.userName}`);
+
     // Handle as non-resident key login
     const user = Users.get(body.userName);
     // Throw a 403 if we receive an invalid username
@@ -69,6 +70,7 @@ export async function loginStartHandle(req: Request, res: Response): Promise<voi
     sub = user.userHandle;
     userName = user.userName;
   } else {
+    // If no username is present, treat it as resident key login
     logger.info(`General attestation request`);
   }
 

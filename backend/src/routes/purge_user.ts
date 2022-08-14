@@ -34,6 +34,7 @@ export function purgeUserHandle(req: Request, res: Response): void {
     return;
   }
   
+  // Delete the user from the Users map
   Users.delete(body.userName);
   logger.info(`Purged user: ${body.userName}`);
 

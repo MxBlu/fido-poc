@@ -91,6 +91,8 @@ export async function loginFinishHandle(req: Request, res: Response): Promise<vo
       }
     }
 
+    // User handle from the user needs to be converted to base64 first
+    const userhandle_b64 = base64buffer.encode(new TextEncoder().encode(user.userHandle));
     // Validate the assertion against the challenge
     const assertionRes = await Fido2.assertionResult(result, {
       challenge: jwt.challenge_b64,
@@ -98,7 +100,7 @@ export async function loginFinishHandle(req: Request, res: Response): Promise<vo
       factor: 'first', // First factor forces on UV, ensure not set to 'discouraged' in Fido2Lib options
       publicKey: cred.publicKey,
       prevCounter: cred.counter,
-      userHandle: base64buffer.encode(new TextEncoder().encode(user.userHandle))
+      userHandle: userhandle_b64
     });
 
     // Update the counter on the credential

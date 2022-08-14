@@ -1,3 +1,7 @@
+/**
+ * Copied across from https://github.com/MxBlu/bot-framework
+ */
+
 import EventEmitter from "events";
 
 import { LogLevel } from "./log_levels.js";

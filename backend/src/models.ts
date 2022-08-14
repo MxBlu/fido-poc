@@ -21,7 +21,11 @@ export type ChallengeJWT = JWTPayload & {
   challenge_b64: string;
 };
 
-/** Slight variation of the attestation request interface to facilitate transport over JSON */
+/** 
+ * Slight variation of the attestation request interface to facilitate transport over JSON 
+ * 
+ * Namely, all ArrayBuffers have been converted to base64 strings for transport
+*/
 export interface AttestationOptionsWireFormat {
   rp: { name: string; id: string; icon?: string };
   user: { id: string, name: string, displayName: string };
@@ -34,7 +38,11 @@ export interface AttestationOptionsWireFormat {
   extensions?: AuthenticationExtensionsClientInputs;
 }
 
-/** Slight variation of the attestation result interface to facilitate transport over JSON */
+/** 
+ * Slight variation of the attestation result interface to facilitate transport over JSON 
+ * 
+ * Namely, all ArrayBuffers have been converted to base64 strings for transport
+*/
 export interface AttestationResultWireFormat {
   id?: string;
   rawId?: string;
@@ -42,7 +50,11 @@ export interface AttestationResultWireFormat {
   response: { clientDataJSON: string; attestationObject: string };
 }
 
-/** Slight variation of the assertion request interface to facilitate transport over JSON */
+/** 
+ * Slight variation of the assertion request interface to facilitate transport over JSON 
+ * 
+ * Namely, all ArrayBuffers have been converted to base64 strings for transport
+*/
 export interface AssertionOptionsWireFormat {
   challenge: string;
   timeout?: number;
@@ -58,7 +70,11 @@ export interface AssertionOptionsWireFormat {
   }[];
 }
 
-/** Slight variation of the assertion result interface to facilitate transport over JSON */
+/** 
+ * Slight variation of the assertion result interface to facilitate transport over JSON 
+ * 
+ * Namely, all ArrayBuffers have been converted to base64 strings for transport
+*/
 export interface AssertionResultWireFormat {
   id?: string;
   rawId?: string;

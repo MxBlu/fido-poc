@@ -47,14 +47,11 @@ export async function registerFinishHandle(req: Request, res: Response): Promise
   logger.info(`Registration finish for username: ${jwt.userName}`);
 
   // Decode base 64 data back to Array Buffers
+  // The response object is fine as is, base64 decoding is built into Fido2Lib
   const result: AttestationResult = {
     ...body.result,
     id: base64buffer.decode(body.result.id),
-    rawId: base64buffer.decode(body.result.rawId),
-    response: {
-      attestationObject: body.result.response.attestationObject,
-      clientDataJSON: body.result.response.clientDataJSON
-    }
+    rawId: base64buffer.decode(body.result.rawId)
   }
 
   try {

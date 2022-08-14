@@ -8,15 +8,7 @@ import { registerFinishHandle } from './routes/register_finish.js';
 import { registerStartHandle } from './routes/register_start.js';
 import { Logger } from './utils/logger.js';
 
-/**
- * General FIDO2 info:
- * 
- * Platform authenticators ('platform') - Uses Windows Hello
- * Roaming authenticators ('cross-platform') - Uses FIDO2 key
- * 
- * TODO: Test resident keys
- */
-
+// ExpressJS Logger
 const logger = new Logger("FidoPOC");
 
 type AsyncExpressHandlerFunction = (req: Request, res: Response, next: NextFunction) => Promise<void>;
@@ -85,11 +77,6 @@ app.use(cors({
 app.use(Express.json());
 // Request logger
 app.use(logRequest);
-
-// Add testing route
-app.get('/echo', (_, res): void => {
-  res.send('echo');
-});
 
 // Add API routes
 app.post('/register/start', runAsync(registerStartHandle));
