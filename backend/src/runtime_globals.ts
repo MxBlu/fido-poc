@@ -9,9 +9,9 @@ export const Fido2 = new Fido2Lib({
   rpId: HOSTNAME,
   rpName: "MxBlue Server",
   attestation: "none",
-  authenticatorAttachment: "cross-platform",
-  authenticatorRequireResidentKey: false,
-  authenticatorUserVerification: "preferred"
+  // authenticatorAttachment: "platform",
+  // authenticatorRequireResidentKey: false,
+  // authenticatorUserVerification: "discouraged"
 });
 
 export let ServerKP: GenerateKeyPairResult = null;
