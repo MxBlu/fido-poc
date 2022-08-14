@@ -17,7 +17,7 @@
     "base64-arraybuffer": "^1.0.2",
     "cors": "^2.8.5",
     "express": "^4.18.1",
-    "fido2-lib": "MxBlu/fido2-lib#type-fix",
+    "fido2-lib": "MxBlu/fido2-lib#type-fix-dev1",
     "jose": "^4.8.3"
   },
   "devDependencies": {

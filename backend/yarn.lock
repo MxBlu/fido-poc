@@ -845,9 +845,9 @@ fastq@^1.6.0:
   dependencies:
     reusify "^1.0.4"
 
-fido2-lib@MxBlu/fido2-lib#type-fix:
+fido2-lib@MxBlu/fido2-lib#type-fix-dev1:
   version "3.2.5"
-  resolved "https://codeload.github.com/MxBlu/fido2-lib/tar.gz/17a3b01699553958923f9fbc4da4eec71e2d2315"
+  resolved "https://codeload.github.com/MxBlu/fido2-lib/tar.gz/9ad8f944b5281b9d49dba8bddea59167ee62cc82"
   dependencies:
     "@hexagon/base64" "~1.1.21"
     "@peculiar/webcrypto" "~1.4.0"
